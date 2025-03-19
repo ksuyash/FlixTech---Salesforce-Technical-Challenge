@@ -1,0 +1,157 @@
+apex:
+public class PermissionSetSwapper {
+    
+    public static void swapPermissions() {
+        String permSet1Name = 'Permission_Set_Account_Contract';
+        String permSet2Name = 'Permission_Set_Account_Contract_Clause';
+
+        // Retrieve Permission Sets
+        PermissionSet permSet1 = [SELECT Id, 
+                                         PermissionsViewAllData, PermissionsModifyAllData, PermissionsManageUsers, 
+                                         PermissionsApiEnabled, PermissionsCustomizeApplication,
+                                         PermissionsManageCustomPermissions, PermissionsManageTranslation, 
+                                         PermissionsViewRoles, PermissionsViewSetup 
+                                  FROM PermissionSet WHERE Name = :permSet1Name LIMIT 1];
+
+        PermissionSet permSet2 = [SELECT Id, 
+                                         PermissionsViewAllData, PermissionsModifyAllData, PermissionsManageUsers, 
+                                         PermissionsApiEnabled, PermissionsCustomizeApplication,
+                                         PermissionsManageCustomPermissions, PermissionsManageTranslation, 
+                                         PermissionsViewRoles, PermissionsViewSetup 
+                                  FROM PermissionSet WHERE Name = :permSet2Name LIMIT 1];
+
+        if (permSet1 == null || permSet2 == null) {
+            System.debug('Error: One or both Permission Sets not found!');
+            return;
+        }
+
+        // Swap System Permissions (with Dependency Handling)
+        swapSystemPermissions(permSet1, permSet2);
+        
+        try {
+            update new List<PermissionSet>{permSet1, permSet2};
+            System.debug('System Permissions swapped successfully.');
+        } catch (DmlException e) {
+            System.debug('Error swapping system permissions: ' + e.getMessage());
+        }
+
+        // Swap Object-Level Permissions
+        swapObjectPermissions(permSet1.Id, permSet2.Id);
+        
+        System.debug('Successfully swapped Object and System Permissions between ' + permSet1Name + ' and ' + permSet2Name + '!');
+    }
+
+    // Method to swap System Permissions (handling dependencies)
+    private static void swapSystemPermissions(PermissionSet permSet1, PermissionSet permSet2) {
+        // Store the original values before swapping
+        Map<String, Boolean> tempPerms = new Map<String, Boolean>{
+            'ViewAllData' => permSet1.PermissionsViewAllData,
+            'ModifyAllData' => permSet1.PermissionsModifyAllData,
+            'ManageUsers' => permSet1.PermissionsManageUsers,
+            'ApiEnabled' => permSet1.PermissionsApiEnabled,
+            'CustomizeApplication' => permSet1.PermissionsCustomizeApplication,
+            'ManageCustomPermissions' => permSet1.PermissionsManageCustomPermissions,
+            'ManageTranslation' => permSet1.PermissionsManageTranslation,
+            'ViewRoles' => permSet1.PermissionsViewRoles,
+            'ViewSetup' => permSet1.PermissionsViewSetup
+        };
+
+        // Swap permissions ensuring dependencies are respected
+        permSet1.PermissionsViewAllData = permSet2.PermissionsViewAllData;
+        permSet1.PermissionsModifyAllData = permSet2.PermissionsModifyAllData;
+        permSet1.PermissionsManageUsers = permSet2.PermissionsManageUsers;
+        permSet1.PermissionsApiEnabled = permSet2.PermissionsApiEnabled;
+
+        // Handle dependencies for CustomizeApplication
+        if (permSet2.PermissionsCustomizeApplication) {
+            permSet1.PermissionsManageCustomPermissions = permSet2.PermissionsManageCustomPermissions;
+            permSet1.PermissionsManageTranslation = permSet2.PermissionsManageTranslation;
+            permSet1.PermissionsViewRoles = permSet2.PermissionsViewRoles;
+            permSet1.PermissionsViewSetup = permSet2.PermissionsViewSetup;
+        }
+        permSet1.PermissionsCustomizeApplication = permSet2.PermissionsCustomizeApplication;
+
+        // Assign back the swapped values
+        permSet2.PermissionsViewAllData = tempPerms.get('ViewAllData');
+        permSet2.PermissionsModifyAllData = tempPerms.get('ModifyAllData');
+        permSet2.PermissionsManageUsers = tempPerms.get('ManageUsers');
+        permSet2.PermissionsApiEnabled = tempPerms.get('ApiEnabled');
+
+        // Handle dependencies for CustomizeApplication
+        if (tempPerms.get('CustomizeApplication')) {
+            permSet2.PermissionsManageCustomPermissions = tempPerms.get('ManageCustomPermissions');
+            permSet2.PermissionsManageTranslation = tempPerms.get('ManageTranslation');
+            permSet2.PermissionsViewRoles = tempPerms.get('ViewRoles');
+            permSet2.PermissionsViewSetup = tempPerms.get('ViewSetup');
+        }
+        permSet2.PermissionsCustomizeApplication = tempPerms.get('CustomizeApplication');
+    }
+
+    // Method to swap Object Permissions
+    private static void swapObjectPermissions(Id permSet1Id, Id permSet2Id) {
+        List<ObjectPermissions> objPerms1 = [SELECT Id, ParentId, SObjectType, PermissionsCreate, PermissionsRead, PermissionsEdit, 
+                                                    PermissionsDelete, PermissionsViewAllRecords, PermissionsModifyAllRecords 
+                                             FROM ObjectPermissions 
+                                             WHERE ParentId = :permSet1Id];
+
+        List<ObjectPermissions> objPerms2 = [SELECT Id, ParentId, SObjectType, PermissionsCreate, PermissionsRead, PermissionsEdit, 
+                                                    PermissionsDelete, PermissionsViewAllRecords, PermissionsModifyAllRecords 
+                                             FROM ObjectPermissions 
+                                             WHERE ParentId = :permSet2Id];
+
+        Map<String, ObjectPermissions> objPermMap1 = new Map<String, ObjectPermissions>();
+        for (ObjectPermissions perm : objPerms1) {
+            objPermMap1.put(perm.SObjectType, perm);
+        }
+
+        Map<String, ObjectPermissions> objPermMap2 = new Map<String, ObjectPermissions>();
+        for (ObjectPermissions perm : objPerms2) {
+            objPermMap2.put(perm.SObjectType, perm);
+        }
+
+        List<ObjectPermissions> updatedObjPerms = new List<ObjectPermissions>();
+
+        for (String sObjectType : objPermMap1.keySet()) {
+            if (objPermMap2.containsKey(sObjectType)) {
+                ObjectPermissions perm1 = objPermMap1.get(sObjectType);
+                ObjectPermissions perm2 = objPermMap2.get(sObjectType);
+
+                // Swap Object Permissions
+                swapObjectPermissionValues(perm1, perm2);
+                updatedObjPerms.add(perm1);
+                updatedObjPerms.add(perm2);
+            }
+        }
+
+        if (!updatedObjPerms.isEmpty()) {
+            update updatedObjPerms;
+        }
+    }
+
+    // Helper method to swap object permission values
+    private static void swapObjectPermissionValues(ObjectPermissions perm1, ObjectPermissions perm2) {
+        Boolean tempCreate = perm1.PermissionsCreate;
+        Boolean tempRead = perm1.PermissionsRead;
+        Boolean tempEdit = perm1.PermissionsEdit;
+        Boolean tempDelete = perm1.PermissionsDelete;
+        Boolean tempViewAll = perm1.PermissionsViewAllRecords;
+        Boolean tempModifyAll = perm1.PermissionsModifyAllRecords;
+
+        perm1.PermissionsCreate = perm2.PermissionsCreate;
+        perm1.PermissionsRead = perm2.PermissionsRead;
+        perm1.PermissionsEdit = perm2.PermissionsEdit;
+        perm1.PermissionsDelete = perm2.PermissionsDelete;
+        perm1.PermissionsViewAllRecords = perm2.PermissionsViewAllRecords;
+        perm1.PermissionsModifyAllRecords = perm2.PermissionsModifyAllRecords;
+
+        perm2.PermissionsCreate = tempCreate;
+        perm2.PermissionsRead = tempRead;
+        perm2.PermissionsEdit = tempEdit;
+        perm2.PermissionsDelete = tempDelete;
+        perm2.PermissionsViewAllRecords = tempViewAll;
+        perm2.PermissionsModifyAllRecords = tempModifyAll;
+    }
+}
+--------------------------------------------------------------------------
+Run:
+PermissionSetSwapper.swapPermissions();
