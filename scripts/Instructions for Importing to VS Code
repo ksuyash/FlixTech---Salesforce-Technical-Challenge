@@ -1,0 +1,10 @@
+Instructions for Importing to VS Code
+
+1. Clone the GitHub Repository:
+Open the terminal in VS Code and run:
+git clone https://github.com/your-username/repository-name.git
+
+2. Import Metadata:
+Extract the package.zip into the local project folder.
+In VS Code, open the Command Palette (Ctrl + Shift + P), type SFDX: Authorize an Org, and authenticate the org where you want to deploy the metadata.
+Run the command SFDX: Deploy Source to Org to deploy the metadata (Flow and Apex class) to the Salesforce Org.
