@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workflow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <alerts>
+        <fullName>To_notify_via_email_the_owner_of_the_account_when_status_value_changes</fullName>
+        <description>To notify the owner of the account when status value changes</description>
+        <protected>false</protected>
+        <recipients>
+            <type>accountOwner</type>
+        </recipients>
+        <senderType>CurrentUser</senderType>
+        <template>unfiled$public/Email_Notification_To_Account_Owner_Regarding_Status_Updaget</template>
+    </alerts>
+</Workflow>

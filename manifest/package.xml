@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+	<types>
+		<members>FileCreatorFromFlow</members>
+		<members>FileCreatorFromFlowTest</members>
+		<name>ApexClass</name>
+	</types>
+	<types>
+		<members>Account</members>
+		<members>Account_Contract_Clause__c</members>
+		<members>Account_Contract__c</members>
+		<name>CustomObject</name>
+	</types>
+	<types>
+		<members>Account_Contract_Clause__c</members>
+		<members>Account_Contract__c</members>
+		<name>CustomTab</name>
+	</types>
+	<types>
+		<members>unfiled$public/Email_Notification_To_Account_Owner_Regarding_Status_Updaget</members>
+		<name>EmailTemplate</name>
+	</types>
+	<types>
+		<members>Account_Contract_Clause_Record_Page</members>
+		<members>Account_Record_Page</members>
+		<name>FlexiPage</name>
+	</types>
+	<types>
+		<members>RecTrigger_Notify_Account_Owner</members>
+		<members>SCN_Account_Contract_Clause</members>
+		<name>Flow</name>
+	</types>
+	<types>
+		<members>Account-Account Layout</members>
+		<members>Account_Contract_Clause__c-Account Contract Clause Layout</members>
+		<members>Account_Contract__c-Account Contract Layout</members>
+		<name>Layout</name>
+	</types>
+	<types>
+		<members>*</members>
+		<name>PathAssistant</name>
+	</types>
+	<types>
+		<members>Permission_Set_Account_Contract</members>
+		<members>Permission_Set_Account_Contract_Clause</members>
+		<name>PermissionSet</name>
+	</types>
+	<types>
+		<members>Admin</members>
+		<name>Profile</name>
+	</types>
+	<types>
+		<members>Account.Account_Contract_Clause</members>
+		<name>QuickAction</name>
+	</types>
+	<types>
+		<members>Account</members>
+		<name>Workflow</name>
+	</types>
+	<types>
+		<members>Account.To_notify_via_email_the_owner_of_the_account_when_status_value_changes</members>
+		<name>WorkflowAlert</name>
+	</types>
+	<version>63.0</version>
+</Package>

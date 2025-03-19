@@ -1,0 +1,9 @@
+Hi {!Account.OwnerFullName},
+
+This is a notification that the status of your account, {!Account.Name}, has been updated.
+
+New Status: {!Account.Status__c}
+
+If you have any questions or require further assistance, feel free to reach out.
+
+Best regards
